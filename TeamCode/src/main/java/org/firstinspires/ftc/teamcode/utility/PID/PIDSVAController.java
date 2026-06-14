@@ -79,13 +79,14 @@ public class PIDSVAController {
      * @param setpoint 目标值（速度或位置）
      * @param measurement 当前值（速度或位置）
      * @param dt 时间间隔（秒）
-     * @param velCycle 是否为速度闭环
+     * @param VelCycle 是否为速度闭环
      * @return 控制器输出
      */
-    public double calculate(double setpoint, double measurement, double dt, boolean velCycle) {
-        if (velCycle) {
+    public double calculate(double setpoint, double measurement, double dt, boolean VelCycle) {
+        if(VelCycle){
             return calculate(setpoint, measurement, setpoint, 0.0, dt);
-        } else {
+        }
+        else{
             return calculate(setpoint, measurement, 0.0, 0.0, dt);
         }
     }
@@ -100,18 +101,33 @@ public class PIDSVAController {
      * @return 控制器输出
      */
     public double calculate(double setpoint, double measurement, double velocity, double acceleration, double dt) {
+        // 获取当前slot的配置
         SlotConfig cfg = slots.get(currentSlot);
+        // 计算误差
         double error = setpoint - measurement;
-        integral += error * dt;
-        if (cfg != null && integral > cfg.maxI) integral = cfg.maxI;
-        if (cfg != null && integral < -cfg.maxI) integral = -cfg.maxI;
+        // 仅在误差小于Izone时才累加积分
+        if (cfg != null && Math.abs(error) < cfg.iZone) {
+            integral += error * dt;
+            // 积分限幅
+            if (integral > cfg.maxI) integral = cfg.maxI;
+            if (integral < -cfg.maxI) integral = -cfg.maxI;
+        } else {
+            integral = 0; // 误差超出Izone时不积分
+        }
+        // 计算微分
         double derivative = (error - previousError) / dt;
+        // 更新上一次误差
         previousError = error;
+        // 计算PID输出
         double pid = cfg.kP * error + cfg.kI * integral + cfg.kD * derivative;
+        // 计算SVA前馈输出
         double sva = cfg.kS * Math.signum(velocity) + cfg.kV * velocity + cfg.kA * acceleration;
+        // 计算总输出
         double output = pid + sva;
+        // 输出限幅
         if (output > cfg.outputMax) output = cfg.outputMax;
         if (output < cfg.outputMin) output = cfg.outputMin;
+        // 返回输出
         return output;
     }
 

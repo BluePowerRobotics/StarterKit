@@ -30,7 +30,8 @@ public class SVAController {
      * @param acceleration 当前加速度
      * @return SVA前馈输出
      */
-    public double calculate(double velocity, double acceleration) {
+    public double calculate(double velocity, double acceleration){
+        // 计算静态摩擦项 + 速度项 + 加速度项
         return kS * Math.signum(velocity) + kV * velocity + kA * acceleration;
     }
 
