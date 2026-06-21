@@ -3,7 +3,10 @@ package org.firstinspires.ftc.teamcode.Controllers.Chassis;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.teamcode.utility.HypParams;
 
 /**
  * 简单的麦轮底盘控制器
@@ -19,20 +22,18 @@ public class Chassis {
     /** 右前电机 */
     public final DcMotorEx rightFront;
 
-    /** 最大线速度 (m/s) */
-    private double maxV = 1.0;
+    /** 最大线速度 (inch/s) */
+    private double maxV;
     /** 最大角速度 (rad/s) */
-    private double maxOmega = Math.PI;
+    private double maxOmega;
 
     /**
      * 构造函数
      * @param hardwareMap 硬件映射
-     * @param maxV 最大线速度，默认1.0
-     * @param maxOmega 最大角速度，默认PI
      */
-    public Chassis(HardwareMap hardwareMap, double maxV, double maxOmega) {
-        this.maxV = maxV;
-        this.maxOmega = maxOmega;
+    public Chassis(HardwareMap hardwareMap) {
+        this.maxV = HypParams.maxV;
+        this.maxOmega = HypParams.maxOmega;
 
         leftFront = hardwareMap.get(DcMotorEx.class, "fL");
         leftBack = hardwareMap.get(DcMotorEx.class, "bL");
@@ -46,10 +47,6 @@ public class Chassis {
 
         leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
         leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
-    }
-
-    public Chassis(HardwareMap hardwareMap) {
-        this(hardwareMap, 1.0, Math.PI);
     }
 
     /**
@@ -78,6 +75,13 @@ public class Chassis {
         leftBack.setPower(lbPower / maxPower);
         rightFront.setPower(rfPower / maxPower);
         rightBack.setPower(rbPower / maxPower);
+    }
+
+    public void update(Gamepad gamepad) {
+        double vx = -gamepad.left_stick_y;
+        double vy = -gamepad.left_stick_x;
+        double omega = -gamepad.right_stick_x;
+        update(vx, vy, omega);
     }
 
     /**

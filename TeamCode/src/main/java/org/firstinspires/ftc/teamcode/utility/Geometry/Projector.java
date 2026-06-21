@@ -27,9 +27,9 @@ public class Projector {
         this.l0 = l0;
     }
 
-    public Vector3D project(double x_p, double y_p, double k) {
-        double d = 1.0 / k;
-        double A = 1.0 / (k * l0);
+    public Vector3D project(double x_p, double y_p, double r) {
+        double d = l0 / r;
+        double A = 1.0 / r;
 
         Vector3D cameraCoord = new Vector3D(d, -A * x_p, A * y_p);
 
