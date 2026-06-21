@@ -66,23 +66,25 @@ utility目录包含了小车的工具类，通常有：
 
 所有程序应当使用统一的单位：
 
-- 距离：米
-- 角度：弧度
+- 距离：英寸
+- 角度：弧度(逆时针为正)
 - 时间：秒/毫秒
 - 质量：千克
+
+有些官方类的单位与此不同，程序内应当在调用时立即转换
 
 ### 基本量命名：
 
 以下量在所有程序中的名称均应相同：
 
 - 小车绝对位置：x, y
+- 其他物体绝对位置：Abs\_x, Abs\_y, Abs\_z
 - 小车朝向：theta
 - 小车绝对速度：Abs\_vx, Abs\_vy
 - 小车相对速度：vx, vy, omega
-- 小车部件相对位置：x, y, z
-- 小车部件相对方向：roll（绕x轴，即滚转角）, pitch（绕y轴，即俯仰角）, yaw（绕z轴，即偏航角）
-- 小车部件绝对位置：Abs\_x, Abs\_y, Abs\_z
-- 小车部件绝对方向：Abs\_pitch, Abs\_yaw, Abs\_roll
+- 相对位置：Rel\_x, Rel\_y, Rel\_z
+- 相对方向：roll（绕x轴，即滚转角）, pitch（绕y轴，即俯仰角）, yaw（绕z轴，即偏航角）
+- 绝对方向：Abs\_pitch, Abs\_yaw, Abs\_roll
 
 ### 类命名
 
@@ -90,7 +92,7 @@ utility目录包含了小车的工具类，通常有：
 
 - RobotPosition类，用于实时提供小车位姿，部件状态（如Sweeper是否有球）和与其有关的值（如是否位于发射区等）。
 - HypParams类，用于存储超参数
-- vector2d, vector3d类，用于表示2D和3D向量。
+- Vector2D, Vector3D类，用于表示2D和3D向量。
 - Chassis类，用于控制小车的底盘
 - Limelight类，用于控制小车的Limelight相机
 - Turret类，用于控制小车的炮塔
