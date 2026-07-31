@@ -1,80 +1,37 @@
 package org.firstinspires.ftc.teamcode.Controllers.Chassis;
 
-import com.qualcomm.robotcore.hardware.DcMotor;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.teamcode.RoadRunner.Localizer;
+import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.utility.HypParams;
 
-/**
- * 简单的麦轮底盘控制器
- * 通过update(vx, vy, omega)手动控制速度，不使用RoadRunner
- */
 public class Chassis {
-    /** 左前电机 */
-    public final DcMotorEx leftFront;
-    /** 左后电机 */
-    public final DcMotorEx leftBack;
-    /** 右后电机 */
-    public final DcMotorEx rightBack;
-    /** 右前电机 */
-    public final DcMotorEx rightFront;
+    private final MecanumDrive drive;
 
-    /** 最大线速度 (inch/s) */
-    private double maxV;
-    /** 最大角速度 (rad/s) */
-    private double maxOmega;
-
-    /**
-     * 构造函数
-     * @param hardwareMap 硬件映射
-     */
     public Chassis(HardwareMap hardwareMap) {
-        this.maxV = HypParams.maxV;
-        this.maxOmega = HypParams.maxOmega;
-
-        leftFront = hardwareMap.get(DcMotorEx.class, "fL");
-        leftBack = hardwareMap.get(DcMotorEx.class, "bL");
-        rightBack = hardwareMap.get(DcMotorEx.class, "bR");
-        rightFront = hardwareMap.get(DcMotorEx.class, "fR");
-
-        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
-        leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+        this(hardwareMap, new Pose2d(0, 0, 0));
     }
 
-    /**
-     * 每帧更新底盘速度
-     * @param vx 相对坐标系x轴方向速度（前进，-1~1）
-     * @param vy 相对坐标系y轴方向速度（左移，-1~1）
-     * @param omega 角速度（逆时针，-1~1）
-     */
+    public Chassis(HardwareMap hardwareMap, Pose2d initialPose) {
+        this.drive = new MecanumDrive(hardwareMap, initialPose);
+        drive.leftFront.setDirection(DcMotorSimple.Direction.REVERSE);
+        drive.leftBack.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
+
     public void update(double vx, double vy, double omega) {
-        double forward = vx * maxV;
-        double strafe = vy * maxV;
-        double rotation = omega * maxOmega;
+        double forward = vx * HypParams.maxV;
+        double strafe = vy * HypParams.maxV;
+        double rotation = omega * HypParams.maxOmega;
 
-        double lfPower = forward + strafe + rotation;
-        double lbPower = forward - strafe + rotation;
-        double rfPower = forward - strafe - rotation;
-        double rbPower = forward + strafe - rotation;
-
-        double maxPower = 1.0;
-        maxPower = Math.max(maxPower, Math.abs(lfPower));
-        maxPower = Math.max(maxPower, Math.abs(lbPower));
-        maxPower = Math.max(maxPower, Math.abs(rfPower));
-        maxPower = Math.max(maxPower, Math.abs(rbPower));
-
-        leftFront.setPower(lfPower / maxPower);
-        leftBack.setPower(lbPower / maxPower);
-        rightFront.setPower(rfPower / maxPower);
-        rightBack.setPower(rbPower / maxPower);
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(forward, strafe), rotation));
     }
 
     public void update(Gamepad gamepad) {
@@ -84,18 +41,7 @@ public class Chassis {
         update(vx, vy, omega);
     }
 
-    /**
-     * 停止所有电机
-     */
     public void stop() {
-        leftFront.setPower(0);
-        leftBack.setPower(0);
-        rightFront.setPower(0);
-        rightBack.setPower(0);
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
     }
-
-    public double getMaxV() { return maxV; }
-    public void setMaxV(double maxV) { this.maxV = maxV; }
-    public double getMaxOmega() { return maxOmega; }
-    public void setMaxOmega(double maxOmega) { this.maxOmega = maxOmega; }
 }
