@@ -15,7 +15,7 @@
 ```java
 // 创建PID控制器
 PIDController pid = new PIDController(kP, kI, kD);
-PIDController pid = new PIDController(kP, kI, kD, maxI); // 带积分上限
+PIDController pid = new PIDController(kP, kI, kD, maxI, iZone); // 带积分上限与Izone
 
 // 每帧调用
 double output = pid.calculate(setpoint, measurement, dt);
@@ -26,6 +26,8 @@ pid.reset();
 // 运行时修改参数
 pid.setPID(newKP, newKI, newKD);
 pid.setMaxI(newMaxI);
+pid.setIZone(newIZone);
+double currentIZone = pid.getIZone();
 ```
 
 **参数说明：**
@@ -33,6 +35,7 @@ pid.setMaxI(newMaxI);
 - `kI`: 积分系数，消除稳态误差
 - `kD`: 微分系数，抑制超调
 - `maxI`: 积分上限，防止积分饱和
+- `iZone`: 误差进入该范围后才累加积分，超出则清零积分
 - `dt`: 时间间隔（秒），两次调用之间的时间差
 
 ### 2. SVAController
@@ -63,7 +66,7 @@ sva.setSVA(newKS, newKV, newKA);
 // 创建PIDSVA控制器，配置slot0
 SlotConfig slot0 = new SlotConfig()
     .withKP(0.1).withKI(0.01).withKD(0.001)
-    .withMaxI(0.5)
+    .withMaxI(0.5).withIZone(10.0)
     .withKS(0.05).withKV(0.12).withKA(0.01)
     .withOutputLimits(-1.0, 1.0);
 
@@ -78,6 +81,10 @@ controller.withSlot(1, slot1);
 
 // 切换slot
 controller.setSlot(1);
+
+// 运行中更新某个slot的参数（需先构建新SlotConfig再resetSlot）
+controller.resetSlot(new SlotConfig().withKP(0.3));          // 更新0号slot
+controller.resetSlot(1, new SlotConfig().withKP(0.25));     // 更新1号slot
 
 // 简单位置闭环
 double output = controller.calculate(setpoint, measurement, dt, false);
@@ -102,6 +109,7 @@ SlotConfig config = new SlotConfig()
     .withKI(0.01)       // 积分系数
     .withKD(0.001)      // 微分系数
     .withMaxI(0.5)      // 积分上限
+    .withIZone(10.0)    // Izone阈值
     .withKS(0.05)       // 静态摩擦系数
     .withKV(0.12)       // 速度系数
     .withKA(0.01)       // 加速度系数
@@ -146,3 +154,12 @@ double currentVel = motor.getVelocity();
 double output = velocityController.calculate(targetVel, currentVel, dt, true);
 motor.setPower(output);
 ```
+
+---
+
+## 注意事项
+
+1. `SlotConfig` 的默认输出限幅为 `-14.0 ~ 14.0`，请根据实际驱动能力用 `withOutputLimits` 调整
+2. `resetSlot` 会用新构建的 `SlotConfig` 整体替换原配置；未被 `withXxx` 覆盖的字段会回到默认值，更新个别参数时请先构建包含完整参数的 `SlotConfig`
+3. 切换 slot 会重置积分与微分状态
+4. `PIDController` 没有 4 参数构造函数，需同时指定 `maxI` 和 `iZone` 时使用 5 参数版本
