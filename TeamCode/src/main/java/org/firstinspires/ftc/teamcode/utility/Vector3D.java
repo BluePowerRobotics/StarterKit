@@ -237,7 +237,7 @@ public class Vector3D {
         Vector3D projection = projectToPlane(point, planeNormal, planePoint);
         return centralSymmetry(projection, point);
     }
-    public static Vector2D toPoint2D(Vector3D p, Vector3D planeNormal, Vector3D planePoint) {
+    public static Vector2D toVector2D(Vector3D p, Vector3D planeNormal, Vector3D planePoint) {
         Vector3D projected = projectToPlane(p, planeNormal, planePoint);
         return new Vector2D(projected.x, projected.y);
     }

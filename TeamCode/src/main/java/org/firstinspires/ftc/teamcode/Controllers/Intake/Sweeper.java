@@ -1,0 +1,104 @@
+package org.firstinspires.ftc.teamcode.Controllers.Intake;
+
+import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
+@Config
+public class Sweeper {
+    //TODO 改成速度闭环/基于电压输出的开环
+    public DcMotorEx motor;
+
+    private Telemetry telemetry;
+    
+
+    public static int EatVel = 700;
+    public static int GiveTheArtifactVel = 2000;
+    public static int OutputVel = -500;
+    
+    private int targetVelocity = 0;
+    private int lastTargetVelocity = 0;
+    
+    public static int ForR = 0;
+    
+    public Sweeper(HardwareMap hardwareMap, Telemetry telemetry) {
+        this.telemetry = telemetry;
+        this.motor = hardwareMap.get(DcMotorEx.class, "sweeperMotor");
+        setDirection();
+        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+    }
+    
+    private void setDirection() {
+        switch(ForR) {
+            case 0:
+                motor.setDirection(DcMotor.Direction.REVERSE);
+                break;
+            case 1:
+                motor.setDirection(DcMotor.Direction.FORWARD);
+                break;
+        }
+    }
+    
+    public void setEat() {
+        targetVelocity = EatVel;
+    }
+    
+    public void setGiveArtifact() {
+        targetVelocity = GiveTheArtifactVel;
+    }
+    
+    public void setOutput() {
+        targetVelocity = OutputVel;
+    }
+    
+    public void setStop() {
+        targetVelocity = 0;
+    }
+    
+    public void setTargetVelocity(int velocity) {
+        targetVelocity = velocity;
+    }
+    
+    public void setPower(double power) {
+        motor.setPower(power);
+    }
+    
+    public void update() {
+        motor.setVelocity(targetVelocity);
+        lastTargetVelocity = targetVelocity;
+        targetVelocity = 0; // 每帧必须重新调用set函数，否则自动归零
+    }
+    
+    public double getPower() {
+        return motor.getPower();
+    }
+    
+    public double getVel() {
+        return motor.getVelocity();
+    }
+    
+    public int getTargetVelocity() {
+        return lastTargetVelocity;
+    }
+    
+    public int getFR() {
+        return ForR;
+    }
+    
+    public double getCurrent() {
+        return motor.getCurrent(CurrentUnit.AMPS);
+    }
+    
+    public void setTelemetry() {
+        /*
+        telemetry.addData("Sweeper Velocity", getVel());
+        telemetry.addData("Sweeper Power*1000", getPower()*1000);
+        telemetry.addData("Sweeper Current", getCurrent());
+
+         */
+    }
+}
