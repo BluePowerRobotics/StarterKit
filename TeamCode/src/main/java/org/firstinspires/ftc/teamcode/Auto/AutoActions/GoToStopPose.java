@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Auto.AutoAction;
+package org.firstinspires.ftc.teamcode.Auto.AutoActions;
 
 import androidx.annotation.NonNull;
 
@@ -10,21 +10,21 @@ import org.firstinspires.ftc.teamcode.Processors.RobotPosition.RobotPosition;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 
 /**
- * 返回起始位姿Action：使用RoadRunner轨迹回到startPose
+ * 停车Action：使用RoadRunner轨迹前往StopPose，同时将炮台复位到0度并停车
  */
-public class GoToStartPose implements Action {
+public class GoToStopPose implements Action {
     private final Action trajectoryAction;
 
-    public GoToStartPose(MecanumDrive drive, Pose2d startPose) {
+    public GoToStopPose(MecanumDrive drive, Pose2d stopPose) {
         Pose2d currentPose = RobotPosition.getInstance().getPose2d();
         this.trajectoryAction = drive.actionBuilder(currentPose)
-                .strafeToLinearHeading(startPose.position, startPose.heading.toDouble())
+                .strafeToLinearHeading(stopPose.position, stopPose.heading.toDouble())
                 .build();
     }
 
     @Override
     public boolean run(@NonNull TelemetryPacket packet) {
-        packet.put("GoToStartPose", "Returning to start...");
+        packet.put("GoToStopPose", "Parking...");
         return trajectoryAction.run(packet);
     }
 }

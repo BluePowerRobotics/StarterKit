@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Auto.AutoAction;
+package org.firstinspires.ftc.teamcode.Auto.AutoActions;
 
 import androidx.annotation.NonNull;
 

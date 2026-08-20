@@ -6,6 +6,11 @@
 
 ```
 teamcode
+├── Auto
+|   ├── AutoActions
+|       ├── ...（各种Action）
+|   ├── AutoOpModes
+|       ├── ...（各种AutoOpMode）
 ├── Controllers
 |   ├── Chassis
 |   ├── ...
@@ -15,17 +20,25 @@ teamcode
 |   ├── ...
 ├── Opmodes
 |   ├── 主程序
-|   ├── Actions
-|   |   ├── ...
-|   ├── AutoAction.java
 |   ├── ...（各种Tester）
 ├── Processors
-|   ├── Localization
-|   |   ├── PinpointLocalizer.java
-|   ├── ...
+|   ├── RobotPosition
+|       ├── RobotPosition(PinpointLocalizer.java)
+|   |   ├── ...
+|   ├── Vision
+|       ├── limelightProcessor
+|       ├── ...
 ├── roadrunner
 ├── utility
 ```
+
+### Auto目录
+
+Auto目录包含了小车的自动模式相关文件夹和文件。
+
+AutoActions文件夹包含了小车自动模式的各个AutoAction文件，AutoAction文件是自动模式的控制程序，应当调用utility.ActionRunner类加载AutoActions文件夹中的action文件，实现自动控制。AutoActions文件夹下应当有一系列action派生类，命名为"...Action.java"，负责调用各个部件的类执行某个特定行为。
+
+AutoOpModes文件夹包含了小车自动模式的主程序文件。
 
 ### Controllers目录
 
@@ -41,13 +54,18 @@ Controllers目录包含了小车各个部件的controller文件夹。每个contr
 
 ### Opmodes目录
 
-Opmodes目录包含了小车的主程序文件,AutoAction.java文件，actions文件夹和各个Tester
+Opmodes目录包含了小车的主程序文件,各个Tester
 
 主程序文件是比赛时直接运行的文件，通常以赛季名称命名
 
-AutoAction.java文件是自动模式的控制程序，应当调用utility.actionRunner类加载actions文件夹中的action文件，实现自动控制。action文件夹下应当有一系列action派生类，命名为"...Action.java"，负责调用各个部件的类执行某个特定行为。
-
 Tester文件用于测试部件功能，也应当放在Opmodes目录下，应当命名为"...Tester.java"。
+
+### Parameters目录
+
+Parameters目录包含了小车的参数文件夹，通常有：
+
+- HypParams类，用于存储超参数
+- TeamColor类，用于存储队伍颜色
 
 ### Processors目录
 
@@ -58,7 +76,6 @@ Processors目录包含了小车的传感器文件夹，每个传感器文件夹�
 utility目录包含了小车的工具类，通常有：
 
 - actionRunner类，用于加载并执行action文件夹中的action文件。
-- HypParams类，用于存储超参数
 - vector2d, vector3d类，用于表示2D和3D向量。
 - 实现高级数学和物理方法的工具包文件夹，如Algebra, Geometry, RK4等，可从github下载。
   utility下的任何程序都不应当直接或间接地控制小车的部件，也不能依赖Controllers目录下的类，但可以调用roadrunner中的工具类

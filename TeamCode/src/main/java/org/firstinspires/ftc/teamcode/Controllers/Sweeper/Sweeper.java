@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Intake;
+package org.firstinspires.ftc.teamcode.Controllers.Sweeper;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.robotcore.hardware.DcMotor;

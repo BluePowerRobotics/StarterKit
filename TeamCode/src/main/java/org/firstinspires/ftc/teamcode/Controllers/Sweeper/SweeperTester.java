@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Controllers.Intake;
+package org.firstinspires.ftc.teamcode.Controllers.Sweeper;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
