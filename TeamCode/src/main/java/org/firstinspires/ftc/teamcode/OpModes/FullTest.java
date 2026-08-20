@@ -21,30 +21,12 @@ public class FullTest extends LinearOpMode {
     private Sweeper sweeper;
     private ActionRunner actionRunner;
 
-    // 手动模式参数（MANUAL mode 下使用）
-    private double roll = 0.0;
-    private double yaw = 50.0;
-    private int targetSpeed = 0;
-    private boolean isShooting = false;
-
-    // 瞄准模式（P2 X 循环切换）
-    private enum AIM_MODE { VISION, LOCALIZATION, MANUAL }
-    private AIM_MODE aimMode = AIM_MODE.VISION;
-
     // 当前目标 AprilTag ID（根据队伍颜色自动选择）
     private int targetTagId;
-
-    // 预载飞轮速度（P2 右扳机控制）
-    private int preSpeed = 0;
 
     // 队伍颜色
     private TeamColor teamColor;
 
-    private static final double ROLL_SPEED = 2.0;
-    private static final double YAW_STEP = 5.0;
-    private static final int SPEED_STEP = 100;
-    private static final int SPEED_MIN = 0;
-    private static final int SPEED_MAX = 3000;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -83,12 +65,6 @@ public class FullTest extends LinearOpMode {
         telemetry.addData("Right Bumper", "Sweeper Output + Flywheel Reverse + Trigger Launch");
         telemetry.addData("Y", "Sweeper Stop");
         telemetry.addData("--- P2 Controls ---", "");
-        telemetry.addData("X", "Cycle Aim Mode: VISION/LOCALIZATION/MANUAL");
-        telemetry.addData("Left Stick X", "Turret Roll (MANUAL mode only)");
-        telemetry.addData("D-Pad Up/Down", "Yaw +/-5 (MANUAL mode only)");
-        telemetry.addData("D-Pad Left/Right", "Speed +/-100 (MANUAL mode only)");
-        telemetry.addData("A", "Toggle Shoot");
-        telemetry.addData("Right Trigger", "Preload Speed (auto aim mode)");
         telemetry.update();
 
         waitForStart();
@@ -130,13 +106,6 @@ public class FullTest extends LinearOpMode {
 
             telemetry.addData("Team", teamColor == TeamColor.BLUE ? "BLUE" : "RED");
             telemetry.addData("useNoHeadMode", chassis.getUseNoHeadMode());
-
-            telemetry.addData("PreSpeed", "%d RPM", preSpeed);
-            telemetry.addData("Roll", "%.2f deg", roll);
-            telemetry.addData("Yaw", "%.2f deg", yaw);
-            telemetry.addData("Target Speed", "%d RPM", targetSpeed);
-            telemetry.addData("Shooting", isShooting ? "ACTIVE" : "IDLE");
-            telemetry.addData("Reverse Mode", gamepad1.right_bumper ? "ACTIVE" : "OFF");
 
             // 位姿信息
             telemetry.addData("Pose X", "%.2f in", RobotPosition.getInstance().getX());

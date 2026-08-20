@@ -29,7 +29,7 @@ teamcode
 
 ### Controllers目录
 
-Controllers目录包含了小车各个部件的controller文件夹。每个controller文件夹应当以所控制的部件名称命名（如Chassis、Turret等），并包含该部件的控制代码。
+Controllers目录包含了小车各个部件的controller文件夹。每个controller文件夹应当以所控制的部件名称命名（如Chassis等），并包含该部件的控制代码。
 
 每个部件的controller文件夹应当包含一个与文件夹同名的类作为主接口，该类的构造函数中应当初始化一切所需内容，且应当包含：
 

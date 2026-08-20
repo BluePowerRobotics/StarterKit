@@ -23,14 +23,12 @@ public class RobotPosition {
     static MecanumDrive drive;
     HardwareMap hardwareMap;
     Localizer localizer;
-    public NormalizedColorSensor fullSensor;
-    public NormalizedColorSensor emptySensor;
 
     // 对HSV三通道分别做EMA滤波，避免单帧噪声导致误判
     private final EMA hueFilter = new EMA(HypParams.ColorAlpha);
     private final EMA saturationFilter = new EMA(HypParams.ColorAlpha);
     private final EMA valueFilter = new EMA(HypParams.ColorAlpha);
-    public boolean ableToShoot = false;
+    public boolean ableTo = false;
     //todo :调整距离
 
     /**
@@ -70,8 +68,6 @@ public class RobotPosition {
 
         instance.currentPose = initpose != null ? initpose : new Pose2d(0,0,0);
         instance.drive=new MecanumDrive(hardwareMap,instance.currentPose);
-        instance.fullSensor = hardwareMap.get(NormalizedColorSensor.class, "FullSensor");
-        instance.emptySensor = hardwareMap.get(NormalizedColorSensor.class, "EmptySensor");
         instance.localizer=instance.drive.localizer;
         return instance;
     }
@@ -106,8 +102,8 @@ public class RobotPosition {
             }
         }
         org.firstinspires.ftc.teamcode.utility.Vector2D pose = new org.firstinspires.ftc.teamcode.utility.Vector2D(instance.getX(), instance.getY());
-        //ableToShoot = SHOOTING_AREA_LEFT.Contains(pose) || SHOOTING_AREA_RIGHT.Contains(pose); //基准点判断法
-        ableToShoot = BoundingBox.inAbsolute(currentPose).IsIntersected(AREA_LEFT) || BoundingBox.inAbsolute(currentPose).IsIntersected(AREA_RIGHT); //碰撞框压线判断法
+        //ableTo = AREA_LEFT.Contains(pose) || AREA_RIGHT.Contains(pose); //基准点判断法
+        ableTo = BoundingBox.inAbsolute(currentPose).IsIntersected(AREA_LEFT) || BoundingBox.inAbsolute(currentPose).IsIntersected(AREA_RIGHT); //碰撞框压线判断法
         return instance.currentPose;
 
     }
@@ -132,7 +128,7 @@ public class RobotPosition {
     }
     public MecanumDrive getDrive(){return drive;}
     public double getOmega(){return currentVelocity2d.angVel;}
-    public boolean isAbleToShoot(){return ableToShoot;}
+    public boolean isAbleTo(){return ableTo;}
 
 
 }

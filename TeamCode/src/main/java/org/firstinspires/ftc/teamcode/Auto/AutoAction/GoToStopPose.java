@@ -6,8 +6,7 @@ import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 
-import org.firstinspires.ftc.teamcode.Controllers.Chassis.RobotPosition;
-import org.firstinspires.ftc.teamcode.Controllers.Turret.Turret;
+import org.firstinspires.ftc.teamcode.Processors.RobotPosition.RobotPosition;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 
 /**
@@ -15,21 +14,17 @@ import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
  */
 public class GoToStopPose implements Action {
     private final Action trajectoryAction;
-    private final Turret turret;
 
-    public GoToStopPose(MecanumDrive drive, Pose2d stopPose, Turret turret) {
+    public GoToStopPose(MecanumDrive drive, Pose2d stopPose) {
         Pose2d currentPose = RobotPosition.getInstance().getPose2d();
         this.trajectoryAction = drive.actionBuilder(currentPose)
                 .strafeToLinearHeading(stopPose.position, stopPose.heading.toDouble())
                 .build();
-        this.turret = turret;
     }
 
     @Override
     public boolean run(@NonNull TelemetryPacket packet) {
         packet.put("GoToStopPose", "Parking...");
-        turret.reset();
-        turret.rotate_to(0, 0);
         return trajectoryAction.run(packet);
     }
 }

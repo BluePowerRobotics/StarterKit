@@ -6,24 +6,22 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.Controllers.Chassis.Chassis;
-import org.firstinspires.ftc.teamcode.Controllers.Chassis.RobotPosition;
-import org.firstinspires.ftc.teamcode.Controllers.Sweeper.Sweeper;
-import org.firstinspires.ftc.teamcode.Controllers.Turret.Turret;
-import org.firstinspires.ftc.teamcode.OpModes.Actions.*;
+import org.firstinspires.ftc.teamcode.Processors.RobotPosition.RobotPosition;
+import org.firstinspires.ftc.teamcode.Controllers.Intake.Sweeper;
+import org.firstinspires.ftc.teamcode.Auto.AutoAction.*;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.utility.ActionRunner;
-import org.firstinspires.ftc.teamcode.utility.HypParams;
-import org.firstinspires.ftc.teamcode.utility.TeamColor;
+import org.firstinspires.ftc.teamcode.Parameter.HypParams;
+import org.firstinspires.ftc.teamcode.Parameter.TeamColor;
 
 @Autonomous(name = "AutoActionRed", group = "Auto")
 public class AutoRed extends LinearOpMode {
     private enum Phase {
-        GOTO_EAT, EAT, GOTO_START, GOTO_SHOOTING, SHOOT, PARK
+        GOTO_START, PARK
     }
 
     private Chassis chassis;
     private Sweeper sweeper;
-    private Turret turret;
     private ActionRunner actionRunner;
     private MecanumDrive drive;
 
@@ -37,7 +35,6 @@ public class AutoRed extends LinearOpMode {
         actionRunner = new ActionRunner();
         chassis = new Chassis(hardwareMap, teamColor, actionRunner, telemetry, HypParams.StartPoseFarRed);
         sweeper = new Sweeper(hardwareMap, telemetry);
-        turret = new Turret(hardwareMap, telemetry);
         drive = RobotPosition.getInstance().getDrive();
 
         telemetry.addData("Status", "AutoActionRed Initialized");
@@ -46,7 +43,7 @@ public class AutoRed extends LinearOpMode {
 
         waitForStart();
 
-        Phase currentPhase = Phase.GOTO_EAT;
+        Phase currentPhase = Phase.GOTO_START;
         boolean parkingStarted = false;
 
         while (opModeIsActive()) {
@@ -54,7 +51,7 @@ public class AutoRed extends LinearOpMode {
             if (isTimeToPark() && !parkingStarted) {
                 actionRunner.clear();
                 sweeper.setStop();
-                actionRunner.add(new GoToStopPose(drive, HypParams.StopPoseRed, turret));
+                actionRunner.add(new GoToStopPose(drive, HypParams.StopPoseRed));
                 currentPhase = Phase.PARK;
                 parkingStarted = true;
             }
@@ -77,25 +74,8 @@ public class AutoRed extends LinearOpMode {
 
             // 根据当前phase启动下一个action
             switch (currentPhase) {
-                case GOTO_EAT:
-                    actionRunner.add(new GoToEatPose(drive, HypParams.EatPoseFarRed));
-                    currentPhase = Phase.EAT;
-                    break;
-                case EAT:
-                    // 红色：向+Y方向移动吃球
-                    actionRunner.add(new EatAction(drive, sweeper, HypParams.EatDistance, Math.PI / 2, HypParams.EatSecond));
-                    currentPhase = Phase.GOTO_START;
-                    break;
                 case GOTO_START:
                     actionRunner.add(new GoToStartPose(drive, HypParams.StartPoseFarRed));
-                    currentPhase = Phase.GOTO_SHOOTING;
-                    break;
-                case GOTO_SHOOTING:
-                    actionRunner.add(new GoToShootingAreaAction(drive, teamColor));
-                    currentPhase = Phase.SHOOT;
-                    break;
-                case SHOOT:
-                    actionRunner.add(new ShootAction(chassis, turret, targetTagId, sweeper));
                     currentPhase = Phase.PARK;
                     parkingStarted = true;
                     break;

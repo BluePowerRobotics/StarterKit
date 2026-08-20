@@ -31,26 +31,26 @@ import org.firstinspires.ftc.teamcode.utility.Vector2D;
 
 // 创建三角形
 Vector2D v1 = new Vector2D(0, 0);
-Vector2D v2 = new Vector2D(10, 0);
-Vector2D v3 = new Vector2D(5, 10);
-ConvexPolygon triangle = new ConvexPolygon(v1, v2, v3);
+        Vector2D v2 = new Vector2D(10, 0);
+        Vector2D v3 = new Vector2D(5, 10);
+        ConvexPolygon triangle = new ConvexPolygon(v1, v2, v3);
 
-// 使用数组创建多边形（任意顶点数）
-Vector2D[] verts = { v1, v2, v3 };
-ConvexPolygon poly = new ConvexPolygon(verts);
+        // 使用数组创建多边形（任意顶点数）
+        Vector2D[] verts = { v1, v2, v3 };
+        ConvexPolygon poly = new ConvexPolygon(verts);
 
-// 检测点是否在多边形内
-Vector2D point = new Vector2D(5, 5);
-boolean contains = triangle.Contains(point);
+        // 检测点是否在多边形内
+        Vector2D point = new Vector2D(5, 5);
+        boolean contains = triangle.Contains(point);
 
-// 检测两个多边形是否相交
-boolean intersects = triangle.IsIntersected(poly);
+        // 检测两个多边形是否相交
+        boolean intersects = triangle.IsIntersected(poly);
 
-// 计算最近点向量（从点到多边形边界）
-Vector2D nearest = triangle.NearestVectorFrom(25, 10);
+        // 计算最近点向量（从点到多边形边界）
+        Vector2D nearest = triangle.NearestVectorFrom(25, 10);
 
-// 坐标转换：相对坐标转绝对坐标
-ConvexPolygon absolutePolygon = triangle.inAbsolute(100, 200, Math.toRadians(45));
+        // 坐标转换：相对坐标转绝对坐标
+        ConvexPolygon absolutePolygon = triangle.inAbsolute(100, 200, Math.toRadians(45));
 ```
 
 ### 方法签名

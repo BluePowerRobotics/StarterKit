@@ -34,22 +34,22 @@ import org.firstinspires.ftc.teamcode.utility.Algebra.ComplexNumber;
 double[] roots = EquationSolver.solve2(1, -5, 6);
 // 返回: [3.0, 2.0]
 
-// 求解三次方程: x^3 - 6x^2 + 11x - 6 = 0
-double[] cubicRoots = EquationSolver.solve3(1, -6, 11, -6);
+        // 求解三次方程: x^3 - 6x^2 + 11x - 6 = 0
+        double[] cubicRoots = EquationSolver.solve3(1, -6, 11, -6);
 // 返回: [1.0, 2.0, 3.0]
 
-// 复数四次方程求解（返回所有复数根，含重根）
-ComplexNumber[] complexRoots = EquationSolver.solve4Complex(a, b, c, d, e);
+        // 复数四次方程求解（返回所有复数根，含重根）
+        ComplexNumber[] complexRoots = EquationSolver.solve4Complex(a, b, c, d, e);
 
-// 从复数根中过滤出实数根
-double[] realRoots = EquationSolver.filterRealRoots(complexRoots);
+        // 从复数根中过滤出实数根
+        double[] realRoots = EquationSolver.filterRealRoots(complexRoots);
 
-// 单位转换
-double inches = EquationSolver.toInch(100);  // 100mm -> 英寸
-double mm = EquationSolver.toMM(4);          // 4英寸 -> mm
+        // 单位转换
+        double inches = EquationSolver.toInch(100);  // 100mm -> 英寸
+        double mm = EquationSolver.toMM(4);          // 4英寸 -> mm
 
-// 计算平均值
-double avg = EquationSolver.avg(1.0, 2.0, 3.0, 4.0);
+        // 计算平均值
+        double avg = EquationSolver.avg(1.0, 2.0, 3.0, 4.0);
 ```
 
 ### 方法签名
