@@ -24,24 +24,23 @@ public class ColorSegTest extends LinearOpMode {
     @Override
     public void runOpMode() {
         // 创建并接好色块分割对象（内部封装 VisionPortal 摄像头）
-        ColorSegCam cam = ColorSegCam.forWebcam(hardwareMap, WEBCAM_NAME, CAM_WIDTH, CAM_HEIGHT);
+        ColorSegCam cam = ColorSegCam.forWebcam(hardwareMap, "Webcam 1", 1280, 720);
 
-       ColorSegCam cam = ColorSegCam.forWebcam(hardwareMap, "Webcam 1", 1280, 720);
+        // 降噪
+        cam.setBlur(3, 1.0);
 
-    // 降噪
-    cam.setBlur(1, 0.2);
+// 环境光源
+        cam.setLightSource(ColorSegCam.ColorSpace.Lab, new ColorSegCam.Vec3(137, 128, 128));
 
-    // 环境光源（LAB 空间）
-    cam.setLightSource(ColorSegCam.ColorSpace.LAB, new ColorSegCam.Vec3(242, 128, 127));
+// 吸光模式
+        cam.setAbsorbMode(ColorSegCam.AbsorbMode.RATIO);
 
-    // 吸光模式
-    cam.setAbsorbMode(ColorSegCam.AbsorbMode.RATIO);
+// 二值化范围（多组取并集）
+        cam.setColorRange(new ColorSegCam.Range(ColorSegCam.ColorSpace.HSL, new ColorSegCam.Vec3(164, 0, 0), new ColorSegCam.Vec3(12, 255, 255)));
 
-    // 二值化范围（多组取并集）
-    cam.setColorRange(new ColorSegCam.Range(ColorSegCam.ColorSpace.HSL, new ColorSegCam.Vec3(171, 0, 23), new ColorSegCam.Vec3(12, 238, 77)));
+// 后处理
+        cam.setMorph(ColorSegCam.MorphOp.OPEN, ColorSegCam.KernShape.ELLIPSE, 5);
 
-    // 后处理
-    cam.setMorph(ColorSegCam.MorphOp.OPEN, ColorSegCam.KernShape.ELLIPSE, 7);   
 
         telemetry.addData("Status", "Initialized, waiting for start");
         telemetry.update();

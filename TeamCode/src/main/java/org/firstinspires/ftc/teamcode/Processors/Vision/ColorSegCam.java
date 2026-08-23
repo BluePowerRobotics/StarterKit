@@ -36,7 +36,7 @@ public class ColorSegCam implements VisionProcessor {
     /** 颜色空间，映射到 OpenCV 双向转换码（图像恒为 BGR，故需正/反向两套码）。 */
     public enum ColorSpace {
         RGB(Imgproc.COLOR_BGR2RGB, Imgproc.COLOR_RGB2BGR),
-        LAB(Imgproc.COLOR_BGR2Lab, Imgproc.COLOR_Lab2BGR),
+        Lab(Imgproc.COLOR_BGR2Lab, Imgproc.COLOR_Lab2BGR),
         HSV(Imgproc.COLOR_BGR2HSV, Imgproc.COLOR_HSV2BGR),
         /** 注意 HLS 通道序为 H,L,S 且 H 范围 0~180。 */
         HSL(Imgproc.COLOR_BGR2HLS, Imgproc.COLOR_HLS2BGR);
@@ -136,7 +136,7 @@ public class ColorSegCam implements VisionProcessor {
 
     private volatile int blurK = 3;
     private volatile double blurSigma = 1.0;
-    private volatile LightSource lightSource = new LightSource(ColorSpace.LAB, new Vec3(137, 128, 128));
+    private volatile LightSource lightSource = new LightSource(ColorSpace.Lab, new Vec3(137, 128, 128));
     private volatile AbsorbMode absorbMode = AbsorbMode.RATIO;
     /** 多区间并集：任意一个区间内的像素即判为目标，需现场标定后调用 setColorRange 修正。 */
     private volatile Range[] ranges = {
