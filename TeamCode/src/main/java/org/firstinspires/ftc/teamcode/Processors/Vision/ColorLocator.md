@@ -272,99 +272,132 @@ while (opModeIsActive() || opModeInInit()) {
 - 若需要更灵活的"任意多区间取并"（如自定义色彩空间、多个上下界一次性合并），可改用自定义
   `VisionProcessor`，直接对 mask 做多区间 `inRange` + `bitwise_or`（参考本项目的 `ColorSegCam`）。
 
-***
+### 7.1 合并不同颜色的 blob（把多色拼接的同一物体当作一个 blob）
 
-## 八、完整代码示例
+若目标是"一个由红、绿等**多种颜色拼接**成的物体，只识别成一个 blob"，官方 CBLP 无法在
+像素层面直接合并：每个处理器阈值独立、`Blob` 又不暴露原始 mask/轮廓，两种颜色只会产出
+两个互不相干的 blob。要合并成一个，有两条路：
 
-### 示例 A：矩形定位（追踪最大色块中心）
+**方法一：几何近似合并（仅依赖官方 `Blob` 的几何信息）**
+
+对第七节拼接出的 `all` 列表，按"外接框是否重叠/邻近"把相邻 blob 合并：重心按面积加权、
+面积相加、外接框取并集。
 
 ```java
-@TeleOp(name = "ColorLocator Rect", group = "Vision")
-public class MyColorLocatorRect extends LinearOpMode {
-    @Override
-    public void runOpMode() {
-        ColorBlobLocatorProcessor locator = new ColorBlobLocatorProcessor.Builder()
-                .setTargetColorRange(ColorRange.ARTIFACT_PURPLE)
-                .setContourMode(ColorBlobLocatorProcessor.ContourMode.EXTERNAL_ONLY)
-                .setRoi(ImageRegion.asUnityCenterCoordinates(-0.75, 0.75, 0.75, -0.75))
-                .setDrawContours(true)
-                .setBlurSize(5)
-                .build();
+import org.opencv.core.Rect;
+import org.opencv.core.RotatedRect;
 
-        VisionPortal portal = new VisionPortal.Builder()
-                .addProcessor(locator)
-                .setCameraResolution(new Size(320, 240))
-                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
-                .build();
+// 简易"复合色块"，承载合并后的几何信息
+static class MergedBlob {
+    Rect bounds;   // 外接框（AABB 近似）
+    double cx, cy; // 面积加权重心（像素坐标）
+    int area;      // 面积之和
+}
 
-        telemetry.setMsTransmissionInterval(100);
-
-        while (opModeIsActive() || opModeInInit()) {
-            List<ColorBlobLocatorProcessor.Blob> blobs = locator.getBlobs();
-
-            ColorBlobLocatorProcessor.Util.filterByCriteria(
-                    ColorBlobLocatorProcessor.BlobCriteria.BY_CONTOUR_AREA, 50, 20000, blobs);
-
-            if (!blobs.isEmpty()) {
-                ColorBlobLocatorProcessor.Blob b = blobs.get(0); // 面积最大者
-                RotatedRect box = b.getBoxFit();
-                telemetry.addData("Center", "(%3.0f, %3.0f)", box.center.x, box.center.y);
-                telemetry.addData("Area", b.getContourArea());
-            } else {
-                telemetry.addData("Target", "not found");
-            }
-            telemetry.update();
-            sleep(100);
-        }
+List<MergedBlob> merged = new ArrayList<>();
+for (ColorBlobLocatorProcessor.Blob b : all) {
+    RotatedRect box = b.getBoxFit();
+    Rect r = box.boundingRect();
+    MergedBlob hit = null;
+    for (MergedBlob m : merged) {
+        // 两外接框是否重叠，或间隙 <= 10 像素
+        boolean overlap = m.bounds.x < r.x + r.width + 10 && r.x < m.bounds.x + m.bounds.width + 10
+                       && m.bounds.y < r.y + r.height + 10 && r.y < m.bounds.y + m.bounds.height + 10;
+        if (overlap) { hit = m; break; }
+    }
+    if (hit == null) {
+        MergedBlob m = new MergedBlob();
+        m.bounds = new Rect(r.x, r.y, r.width, r.height);
+        m.cx = box.center.x;
+        m.cy = box.center.y;
+        m.area = b.getContourArea();
+        merged.add(m);
+    } else {
+        int a = b.getContourArea();
+        double na = hit.area + a;                                    // 面积相加
+        hit.cx = (hit.cx * hit.area + box.center.x * a) / na;        // 面积加权重心
+        hit.cy = (hit.cy * hit.area + box.center.y * a) / na;
+        hit.area = (int) na;
+        int x1 = Math.min(hit.bounds.x, r.x);                        // 外接框取并集
+        int y1 = Math.min(hit.bounds.y, r.y);
+        int x2 = Math.max(hit.bounds.x + hit.bounds.width,  r.x + r.width);
+        int y2 = Math.max(hit.bounds.y + hit.bounds.height, r.y + r.height);
+        hit.bounds = new Rect(x1, y1, x2 - x1, y2 - y1);
     }
 }
 ```
 
-### 示例 B：圆形定位（筛选正圆目标）
+> 局限：这纯粹靠几何邻近度合并，不感知真实像素是否连通。两个**同色但恰好贴在一起**的物体
+> 也会被误合并；只有**异色且物理相连**的物体才能正确合并，适合对精度要求不高的场景。
+
+**方法二：像素级合并（自定义 `VisionProcessor`，推荐）**
+
+要真正让"异色相邻像素连成同一个 blob"，必须让所有目标颜色落在**同一张 mask** 里：对同一帧
+做多个 `inRange` 区间，再用 `bitwise_or` 合并成一张 mask，然后跑连通域/找轮廓。这正是本项目
+`ColorSegCam` 的实现思路；官方 CBLP 每个处理器各有一张独立 mask，无法做到这一点。
+
+***
+
+## 八、完整代码示例
+
 
 ```java
-@TeleOp(name = "ColorLocator Circle", group = "Vision")
-public class MyColorLocatorCircle extends LinearOpMode {
-    @Override
-    public void runOpMode() {
-        ColorBlobLocatorProcessor locator = new ColorBlobLocatorProcessor.Builder()
-                .setTargetColorRange(ColorRange.YELLOW)
+        // ===== 需要的 import（按项目模板补充）=====
+        // import java.util.ArrayList;
+        // import java.util.List;
+        // import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+        // import org.firstinspires.ftc.robotcore.external.navigation.Size;
+        // import org.firstinspires.ftc.robotcore.external.tfod.SortOrder;
+        // import org.firstinspires.ftc.vision.VisionPortal;
+        // import org.firstinspires.ftc.vision.opencv.ColorBlobLocatorProcessor;
+        // import org.firstinspires.ftc.vision.opencv.ColorRange;
+        // import org.firstinspires.ftc.vision.opencv.ColorSpace;
+        // import org.firstinspires.ftc.vision.opencv.ImageRegion;
+        // import org.opencv.core.RotatedRect;
+
+        // ===== 初始化阶段 =====  （放入 runOpMode 开头）
+        // 构建每个 ColorBlobLocatorProcessor
+        ColorBlobLocatorProcessor proc0 = new ColorBlobLocatorProcessor.Builder()
+                .setTargetColorRange(new ColorRange(ColorSpace.YCrCb,
+                                new Scalar(0, 0, 0),
+                                new Scalar(255, 255, 255)))
                 .setContourMode(ColorBlobLocatorProcessor.ContourMode.EXTERNAL_ONLY)
-                .setRoi(ImageRegion.asUnityCenterCoordinates(-0.75, 0.75, 0.75, -0.75))
-                .setBoxFitColor(0)                        // 关闭矩形框
-                .setCircleFitColor(Color.rgb(255, 255, 0))// 画黄色圆框
+                .setRoi(ImageRegion.entireFrame())
                 .setBlurSize(5)
-                .setDilateSize(15)
-                .setErodeSize(15)
+                .setErodeSize(0)
+                .setDilateSize(0)
                 .setMorphOperationType(ColorBlobLocatorProcessor.MorphOperationType.CLOSING)
                 .build();
 
+        // 挂载到同一个 VisionPortal
         VisionPortal portal = new VisionPortal.Builder()
-                .addProcessor(locator)
-                .setCameraResolution(new Size(320, 240))
-                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+                .addProcessor(proc0)
+                .setCameraResolution(new Size(640, 360))
+                .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))  // 或用 BuiltinCameraDirection.BACK
                 .build();
 
         telemetry.setMsTransmissionInterval(100);
 
-        while (opModeIsActive() || opModeInInit()) {
-            List<ColorBlobLocatorProcessor.Blob> blobs = locator.getBlobs();
+        // ===== 运行阶段 =====  （放入 runOpMode 循环体内）
+        // 读取每个 Processor 的色块列表
+        List<ColorBlobLocatorProcessor.Blob> blobs0 = proc0.getBlobs();
 
-            ColorBlobLocatorProcessor.Util.filterByCriteria(
-                    ColorBlobLocatorProcessor.BlobCriteria.BY_CONTOUR_AREA, 50, 20000, blobs);
-            ColorBlobLocatorProcessor.Util.filterByCriteria(
-                    ColorBlobLocatorProcessor.BlobCriteria.BY_CIRCULARITY, 0.6, 1, blobs);
+        // 合并所有色块
+        List<ColorBlobLocatorProcessor.Blob> allBlobs = new ArrayList<>();
+        allBlobs.addAll(blobs0);
 
-            for (ColorBlobLocatorProcessor.Blob b : blobs) {
-                Circle c = b.getCircle();
-                telemetry.addLine(String.format("circ=%.3f r=%d c=(%3d,%3d)",
-                        b.getCircularity(), (int) c.getRadius(), (int) c.getX(), (int) c.getY()));
-            }
-            telemetry.update();
-            sleep(100);
+        // 全局排序
+        ColorBlobLocatorProcessor.Util.sortByCriteria(ColorBlobLocatorProcessor.BlobCriteria.BY_CONTOUR_AREA, SortOrder.DESCENDING, allBlobs);
+
+        // 只提取排序第一的色块，并存储其拟合形状与关键参数
+        if (!allBlobs.isEmpty()) {
+            ColorBlobLocatorProcessor.Blob firstBlob = allBlobs.get(0);
+            ColorBlobLocatorProcessor.Circle circle = firstBlob.getCircle();
+            double circleCenterX = circle.getX();
+            double circleCenterY = circle.getY();
+            double circleRadius = circle.getRadius();
         }
-    }
-}
+
 ```
 
 ***

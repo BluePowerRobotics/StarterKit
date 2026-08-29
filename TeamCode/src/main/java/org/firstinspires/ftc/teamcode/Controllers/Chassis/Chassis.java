@@ -104,15 +104,16 @@ public class Chassis {
         telemetry.addData("HeadingPID_kP", headingPID.getKP());
         telemetry.addData("HeadingPID_kI", headingPID.getKI());
         telemetry.addData("HeadingPID_kD", headingPID.getKD());
-        /*/
+        /*
         telemetry.addData("lfP",drive.leftFront.getPower());
         telemetry.addData("rfP",drive.rightFront.getPower());
         telemetry.addData("lbP",drive.leftBack.getPower());
         telemetry.addData("rbP",drive.rightBack.getPower());
+        */
+        telemetry.addData("Vx",RobotPosition.getInstance().getVx());
+        telemetry.addData("Vy",RobotPosition.getInstance().getVy());
+        telemetry.addData("Omega",Math.toDegrees(RobotPosition.getInstance().getOmega()));
         /*
-        //telemetry.addData("Vx",RobotPosition.getInstance().getVx());
-        //telemetry.addData("Vy",RobotPosition.getInstance().getVy());
-        //telemetry.addData("Omega",Math.toDegrees(RobotPosition.getInstance().getOmega()));
         telemetry.addData("lfV",drive.leftFront.getVelocity());
         telemetry.addData("rfV",drive.rightFront.getVelocity());
         telemetry.addData("lbV",drive.leftBack.getVelocity());

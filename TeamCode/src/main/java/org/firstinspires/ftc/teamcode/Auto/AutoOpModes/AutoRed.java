@@ -2,94 +2,103 @@ package org.firstinspires.ftc.teamcode.Auto.AutoOpModes;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.Controllers.Chassis.Chassis;
+import org.firstinspires.ftc.teamcode.Auto.AutoActions.GoToStopPose;
+import org.firstinspires.ftc.teamcode.Parameter.HypParams;
 import org.firstinspires.ftc.teamcode.Processors.RobotPosition.RobotPosition;
-import org.firstinspires.ftc.teamcode.Controllers.Sweeper.Sweeper;
-import org.firstinspires.ftc.teamcode.Auto.AutoActions.*;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
 import org.firstinspires.ftc.teamcode.utility.ActionRunner;
-import org.firstinspires.ftc.teamcode.Parameter.HypParams;
-import org.firstinspires.ftc.teamcode.Parameter.TeamColor;
 
-@Autonomous(name = "AutoActionRed", group = "Auto")
+/**
+ * 红队自动阶段主程序框架
+ * 使用状态机：START -> PARKING -> STOP
+ */
+@Autonomous(name = "AutoRed", group = "Auto")
 public class AutoRed extends LinearOpMode {
-    private enum Phase {
-        GOTO_START, PARK
+
+    /** 自动阶段状态机 */
+    private enum AutoState {
+        START, PARKING, STOP
     }
 
-    private Chassis chassis;
-    private Sweeper sweeper;
     private ActionRunner actionRunner;
     private MecanumDrive drive;
+
+    /** 红队起始与停车位姿 */
+    private final Pose2d startPose = HypParams.startPoseRed;
+    private final Pose2d stopPose = HypParams.StopPoseRed;
+
+    /** 当前状态，初始为 START */
+    private AutoState currentState = AutoState.START;
+
+    /** 主动请求停车标志 */
+    private boolean shouldPark = false;
 
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        TeamColor teamColor = TeamColor.RED;
-        int targetTagId = HypParams.targetTagIdRed;
-
         actionRunner = new ActionRunner();
-        chassis = new Chassis(hardwareMap, teamColor, actionRunner, telemetry, HypParams.StartPoseFarRed);
-        sweeper = new Sweeper(hardwareMap, telemetry);
+
+        // 初始化定位与底盘
+        RobotPosition.RobotPositioninit(hardwareMap, startPose);
         drive = RobotPosition.getInstance().getDrive();
 
-        telemetry.addData("Status", "AutoActionRed Initialized");
-        telemetry.addData("StartPose", HypParams.StartPoseFarRed);
+        telemetry.addData("Status", "Initialized");
         telemetry.update();
 
         waitForStart();
 
-        Phase currentPhase = Phase.GOTO_START;
-        boolean parkingStarted = false;
+        // 比赛计时从 START 按下后开始
+        ElapsedTime matchTime = new ElapsedTime();
 
-        while (opModeIsActive()) {
-            // 检查时间：剩余不足且未开始停车 → 立即清空并启动GoToStopPose
-            if (isTimeToPark() && !parkingStarted) {
-                actionRunner.clear();
-                sweeper.setStop();
-                actionRunner.add(new GoToStopPose(drive, HypParams.StopPoseRed));
-                currentPhase = Phase.PARK;
-                parkingStarted = true;
-            }
-
+        while (opModeIsActive() && currentState != AutoState.STOP) {
+            // 更新位姿
             RobotPosition.getInstance().update();
-            actionRunner.update();
 
-            // action未完成，继续等待
-            if (actionRunner.isBusy()) {
-                telemetry.addData("Phase", currentPhase);
-                telemetry.addData("Time", "%.1fs", getRuntime());
-                telemetry.update();
-                continue;
+            // 剩余时间（毫秒）
+            long remainingMs = HypParams.AUTONOMOUS_DURATION_MS - (long) matchTime.milliseconds();
+
+            // ===== 全局停车判定：任意仍可运行的状态下，超时或主动停车时立即中断所有 Action 并转入 PARKING =====
+            if (currentState != AutoState.PARKING && currentState != AutoState.STOP) {
+                if (remainingMs < HypParams.PARK_TIME_THRESHOLD_MS || shouldPark) {
+                    actionRunner.clear();
+                    actionRunner.add(new GoToStopPose(drive, stopPose));
+                    currentState = AutoState.PARKING;
+                }
             }
 
-            // 停车完成，退出
-            if (currentPhase == Phase.PARK) {
-                break;
-            }
+            // ===== 状态机主循环 =====
+            switch (currentState) {
+                case START:
+                    // todo: 在此添加自动阶段起始动作（得分、放置等）
+                    shouldPark = true;
+                    break;
 
-            // 根据当前phase启动下一个action
-            switch (currentPhase) {
-                case GOTO_START:
-                    actionRunner.add(new GoToStartPose(drive, HypParams.StartPoseFarRed));
-                    currentPhase = Phase.PARK;
-                    parkingStarted = true;
+                case PARKING:
+                    if (!actionRunner.isBusy()) {
+                        currentState = AutoState.STOP;
+                    }
+                    break;
+
+                case STOP:
                     break;
             }
 
-            telemetry.addData("Phase", currentPhase);
-            telemetry.addData("Time", "%.1fs", getRuntime());
+            actionRunner.update();
+
+            telemetry.addData("State", currentState);
+            telemetry.addData("Remaining(ms)", remainingMs);
             telemetry.update();
         }
 
-        chassis.stop();
-    }
-
-    private boolean isTimeToPark() {
-        return getRuntime() * 1000 > (HypParams.AUTONOMOUS_DURATION_MS - HypParams.PARK_TIME_THRESHOLD_MS);
+        // 确保底盘停稳
+        drive.setDrivePowers(new PoseVelocity2d(new Vector2d(0, 0), 0));
     }
 }

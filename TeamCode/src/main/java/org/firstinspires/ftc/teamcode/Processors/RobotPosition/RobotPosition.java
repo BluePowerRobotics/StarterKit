@@ -16,35 +16,9 @@ import org.firstinspires.ftc.teamcode.Parameter.HypParams;
 import org.firstinspires.ftc.teamcode.utility.filter.EMA;
 @Config
 public class RobotPosition {
-    private static final ConvexPolygon AREA_LEFT = HypParams.AREA_LEFT;
-    private static final ConvexPolygon AREA_RIGHT = HypParams.AREA_RIGHT;
-    private static final ConvexPolygon BoundingBox = HypParams.BoundingBox;
-
     static MecanumDrive drive;
     HardwareMap hardwareMap;
     Localizer localizer;
-
-    // 对HSV三通道分别做EMA滤波，避免单帧噪声导致误判
-    private final EMA hueFilter = new EMA(HypParams.ColorAlpha);
-    private final EMA saturationFilter = new EMA(HypParams.ColorAlpha);
-    private final EMA valueFilter = new EMA(HypParams.ColorAlpha);
-    public boolean ableTo = false;
-    //todo :调整距离
-
-    /**
-     * 读取颜色传感器，转为HSV并做EMA滤波，结果写入outHsv
-     */
-    private void readAndFilter(NormalizedColorSensor sensor, float[] outHsv) {
-        NormalizedRGBA colors = sensor.getNormalizedColors();
-        float[] rawHsv = new float[3];
-        Color.colorToHSV(colors.toColor(), rawHsv);
-
-        if (!Float.isNaN(rawHsv[0]) && !Float.isNaN(rawHsv[1]) && !Float.isNaN(rawHsv[2])) {
-            outHsv[0] = (float) hueFilter.update(rawHsv[0]);
-            outHsv[1] = (float) saturationFilter.update(rawHsv[1]);
-            outHsv[2] = (float) valueFilter.update(rawHsv[2]);
-        }
-    }
 
     public Pose2d currentPose;
     public PoseVelocity2d currentVelocity2d;
@@ -102,10 +76,7 @@ public class RobotPosition {
             }
         }
         org.firstinspires.ftc.teamcode.utility.Vector2D pose = new org.firstinspires.ftc.teamcode.utility.Vector2D(instance.getX(), instance.getY());
-        //ableTo = AREA_LEFT.Contains(pose) || AREA_RIGHT.Contains(pose); //基准点判断法
-        ableTo = BoundingBox.inAbsolute(currentPose).IsIntersected(AREA_LEFT) || BoundingBox.inAbsolute(currentPose).IsIntersected(AREA_RIGHT); //碰撞框压线判断法
         return instance.currentPose;
-
     }
 
 
@@ -128,7 +99,5 @@ public class RobotPosition {
     }
     public MecanumDrive getDrive(){return drive;}
     public double getOmega(){return currentVelocity2d.angVel;}
-    public boolean isAbleTo(){return ableTo;}
-
 
 }

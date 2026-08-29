@@ -9,29 +9,56 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 @Config
+/**
+ * 集球器（Sweeper）控制器
+ *
+ * 当前实现（固件速度闭环，推荐）：
+ *   使用 REV Hub 内置速度 PIDF（RUN_USING_ENCODER + setVelocity + setVelocityPIDFCoefficients），
+ *   PID 在 Hub 固件内以约 1kHz 完成，延迟低、且不占用 Robot Controller 线程。
+ *
+ * 未来如需软件闭环（自定义控制律：变增益/前馈/抗积分饱和等），可按以下步骤改造：
+ *   1. 将 motor 切到 RUN_WITHOUT_ENCODER（让 setPower 直接控制功率）。
+ *   2. 使用 utility.PID 包的 PIDSVAController + SlotConfig（或 PIDController）做速度闭环：
+ *        PIDSVAController ctrl = new PIDSVAController().withSlot0(
+ *            new SlotConfig()
+ *                .withKP(kP).withKI(kI).withKD(kD)
+ *                .withKS(kS).withKV(kV).withKA(kA)
+ *                .withOutputLimits(-1.0, 1.0));
+ *        // 每帧：double out = ctrl.calculate(targetVel, motor.getVelocity(), dt, true);
+ *        //        motor.setPower(out);
+ *   3. 具体用法参见 utility/PID/Guide.md 与 MotorPIDCore.java。
+ * 注意：软件闭环延迟稍高且受 RC 线程节拍影响，仅在确需自定义控制律时切换。
+ */
 public class Sweeper {
-    //TODO 改成速度闭环/基于电压输出的开环
     public DcMotorEx motor;
 
     private Telemetry telemetry;
-    
 
     public static int EatVel = 700;
     public static int GiveTheArtifactVel = 2000;
     public static int OutputVel = -500;
-    
+
+    /** 固件速度闭环 PIDF 系数（REV Hub 内置速度 PID，可在 FTC Dashboard 实时调参） */
+    public static double VelocityP = 1.17;
+    public static double VelocityI = 0.117;
+    public static double VelocityD = 0.0;
+    public static double VelocityF = 0.0;
+
     private int targetVelocity = 0;
     private int lastTargetVelocity = 0;
-    
+
     public static int ForR = 0;
-    
+
     public Sweeper(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
         this.motor = hardwareMap.get(DcMotorEx.class, "sweeperMotor");
         setDirection();
+        // 固件速度闭环：开启编码器速度模式并配置内置速度 PIDF
+        motor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motor.setVelocityPIDFCoefficients(VelocityP, VelocityI, VelocityD, VelocityF);
         motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
-    
+
     private void setDirection() {
         switch(ForR) {
             case 0:
@@ -42,57 +69,54 @@ public class Sweeper {
                 break;
         }
     }
-    
+
     public void setEat() {
         targetVelocity = EatVel;
     }
-    
+
     public void setGiveArtifact() {
         targetVelocity = GiveTheArtifactVel;
     }
-    
+
     public void setOutput() {
         targetVelocity = OutputVel;
     }
-    
+
     public void setStop() {
         targetVelocity = 0;
     }
-    
+
     public void setTargetVelocity(int velocity) {
         targetVelocity = velocity;
     }
-    
-    public void setPower(double power) {
-        motor.setPower(power);
-    }
-    
+
     public void update() {
+        // 固件闭环：把目标速度下发给 Hub 内置速度 PID
         motor.setVelocity(targetVelocity);
         lastTargetVelocity = targetVelocity;
         targetVelocity = 0; // 每帧必须重新调用set函数，否则自动归零
     }
-    
+
     public double getPower() {
         return motor.getPower();
     }
-    
+
     public double getVel() {
         return motor.getVelocity();
     }
-    
+
     public int getTargetVelocity() {
         return lastTargetVelocity;
     }
-    
+
     public int getFR() {
         return ForR;
     }
-    
+
     public double getCurrent() {
         return motor.getCurrent(CurrentUnit.AMPS);
     }
-    
+
     public void setTelemetry() {
         /*
         telemetry.addData("Sweeper Velocity", getVel());
