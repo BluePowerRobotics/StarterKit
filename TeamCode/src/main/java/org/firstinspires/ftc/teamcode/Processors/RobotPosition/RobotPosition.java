@@ -6,8 +6,12 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.PoseVelocity2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import org.firstinspires.ftc.teamcode.RoadRunner.Localizer;
 import org.firstinspires.ftc.teamcode.RoadRunner.MecanumDrive;
@@ -19,6 +23,9 @@ public class RobotPosition {
     static MecanumDrive drive;
     HardwareMap hardwareMap;
     Localizer localizer;
+
+    /** IMU，复用 Road Runner 已初始化的实例（设备名 "imu"） */
+    private IMU imu;
 
     public Pose2d currentPose;
     public PoseVelocity2d currentVelocity2d;
@@ -43,6 +50,8 @@ public class RobotPosition {
         instance.currentPose = initpose != null ? initpose : new Pose2d(0,0,0);
         instance.drive=new MecanumDrive(hardwareMap,instance.currentPose);
         instance.localizer=instance.drive.localizer;
+        // IMU 复用 Road Runner 已初始化的实例
+        instance.imu = instance.drive.lazyImu.get();
         return instance;
     }
 
@@ -99,5 +108,30 @@ public class RobotPosition {
     }
     public MecanumDrive getDrive(){return drive;}
     public double getOmega(){return currentVelocity2d.angVel;}
+
+    // ---- IMU 功能（原 IMUSensor.java 合并于此） ----
+
+    /**
+     * 读取 IMU 的 yaw/pitch/roll 角。
+     */
+    public YawPitchRollAngles getYawPitchRollAngles() {
+        return imu.getRobotYawPitchRollAngles();
+    }
+
+    /**
+     * 获取指定单位的 yaw（航向角）。
+     * @param angleUnit 角度单位
+     */
+    public double getYaw(AngleUnit angleUnit) {
+        return imu.getRobotYawPitchRollAngles().getYaw(angleUnit);
+    }
+
+    /**
+     * 重置 IMU yaw 为 0。
+     * 注意：Road Runner 定位依赖 IMU yaw 计算航向增量，运行中调用会破坏位姿估计，仅应在初始化/标定时使用。
+     */
+    public void resetYaw() {
+        imu.resetYaw();
+    }
 
 }

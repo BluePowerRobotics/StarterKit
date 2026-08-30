@@ -66,6 +66,18 @@ public void loop() {
 | `getVy()` | `double` | Y 轴线速度（英寸/秒） |
 | `getOmega()` | `double` | 角速度（弧度/秒） |
 
+### IMU 接口（航向角）
+
+IMU 复用 Road Runner 已初始化的实例（设备名 `"imu"`，方向在 `MecanumDrive.PARAMS` 中配置）。
+
+| 方法 | 返回值 | 说明 |
+|------|--------|------|
+| `getYawPitchRollAngles()` | `YawPitchRollAngles` | 获取 IMU 的 yaw/pitch/roll 角 |
+| `getYaw(AngleUnit)` | `double` | 获取指定单位的 yaw（航向角） |
+| `resetYaw()` | `void` | 重置 IMU yaw 为 0 |
+
+> **注意：** `resetYaw()` 会清零 IMU yaw。由于 Road Runner 定位依赖 IMU yaw 计算航向增量，运行中调用会破坏位姿估计，仅应在初始化/标定时使用。
+
 ## 使用示例
 
 ### 基本定位查询
